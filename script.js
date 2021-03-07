@@ -66,7 +66,7 @@ const labelBalance = document.querySelector('.balance__value');
 const labelSumIn = document.querySelector('.summary__value--in');
 const labelSumOut = document.querySelector('.summary__value--out');
 const labelSumInterest = document.querySelector('.summary__value--interest');
-// const labelTimer = ;
+const labelTimer = document.querySelector('.timer');
 
 const containerApp = document.querySelector('.app');
 const containerMovements = document.querySelector('.movements');
@@ -93,7 +93,6 @@ const formatDates = function (date, acc) {
     return Math.abs(date2 - date1) / (24 * 60 * 60 * 1000);
   };
   const daysPassed = Math.round(calcDaysPassed(new Date(), date));
-  console.log(daysPassed);
 
   if (daysPassed === 0) return 'Today';
   if (daysPassed === 1) return 'yesterday';
@@ -115,6 +114,31 @@ const intlCurrency = function (value, locale, currency) {
   }).format(value);
 };
 
+const logOutTimer = function () {
+  let time = 150;
+
+  const tick = function () {
+    let minutes = String(Math.trunc(time / 60)).padStart(2, 0);
+    let seconds = String(time % 60).padStart(2, 0);
+    labelTimer.textContent = `${minutes} : ${seconds}`;
+
+    // logout user
+
+    if (time === 0) {
+      clearInterval(timer);
+      containerApp.style.opacity = 0;
+      labelWelcome.textContent = `Log in to get started`;
+    }
+    // seconds--;
+    time--;
+  };
+
+  tick();
+
+  const timer = setInterval(tick, 1000);
+  return timer;
+};
+
 const displayMovements = function (acc, sort = false) {
   containerMovements.innerHTML = '';
   const mov = sort
@@ -123,7 +147,6 @@ const displayMovements = function (acc, sort = false) {
 
   mov.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal';
-    console.log(acc.movementsDates[i]);
 
     const arrayDates = new Date(acc.movementsDates[i]);
     const finalDates = formatDates(arrayDates, currentAccount);
@@ -206,7 +229,7 @@ const updateUI = function (acc) {
 };
 
 // Event Handlers
-let currentAccount;
+let currentAccount, timer;
 
 // fake login
 // currentAccount = account1;
@@ -248,6 +271,12 @@ btnLogin.addEventListener('click', function (e) {
       options
     ).format(now);
 
+    // Set timer
+
+    if (timer) clearInterval(timer);
+
+    timer = logOutTimer();
+
     //update UI
 
     updateUI(currentAccount);
@@ -274,20 +303,34 @@ btnTransfer.addEventListener('click', function (e) {
     account.movementsDates.push(new Date().toISOString());
 
     updateUI(currentAccount);
+
+    if (timer) clearInterval(timer);
+
+    timer = logOutTimer();
   }
 });
 
 btnLoan.addEventListener('click', function (e) {
   e.preventDefault();
   console.log('loan');
-  const amount = Math.floor(inputLoanAmount.value);
 
-  if (amount > 0 && currentAccount.movements.some(mov => mov >= amount * 0.1)) {
-    currentAccount.movements.push(amount);
-    // Add to date array
-    currentAccount.movementsDates.push(new Date().toISOString());
-    updateUI(currentAccount);
-  }
+  const amount = Math.floor(inputLoanAmount.value);
+  setTimeout(function () {
+    if (
+      amount > 0 &&
+      currentAccount.movements.some(mov => mov >= amount * 0.1)
+    ) {
+      currentAccount.movements.push(amount);
+      // Add to date array
+      currentAccount.movementsDates.push(new Date().toISOString());
+
+      updateUI(currentAccount);
+
+      if (timer) clearInterval(timer);
+
+      timer = logOutTimer();
+    }
+  }, 2500);
   inputLoanAmount.value = '';
 });
 
